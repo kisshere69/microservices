@@ -1,15 +1,25 @@
 package com.example.support;
 
-public class main{
+import static java.util.UUID.randomUUID;
 
-    public static void main(String[] args){
-        SupportTicket ticket = new SupportTicket();
+public class Main {
+     static void main(String[] args) {
+        TicketService ticketService = new TicketService();
 
-        ticket.id = "INC-12345";
-        ticket.title = "Unable to access account";
-        ticket.status = "Open";
+        SupportTicket ticket = ticketService.createTicket(
+                randomUUID().toString(),
+                "Payment API is returning 500"
+        );
 
-        ticket.printSummary();
+        ticketService.printTicketSummary(ticket);
+
+        ticketService.openTicket(ticket);
+
+        ticketService.printTicketUpdate(ticket);
+
+        ticketService.startInvestigation(ticket);
+
+        ticketService.printTicketSummary(ticket);
     }
 }
 
