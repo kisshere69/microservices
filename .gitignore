@@ -1,5 +1,7 @@
 ### IntelliJ IDEA ###
 out/
+target/
+**/target/
 !**/src/main/**/out/
 !**/src/test/**/out/
 .kotlin
