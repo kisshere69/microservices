@@ -1,8 +1,11 @@
 # Final Project Design
 
 This document describes the intended final shape of the Microservices project as
-a support-ticket platform. It is a design artifact only; it does not introduce
-or require application code changes.
+a support-ticket platform built with Java, Spring Boot, Kafka, PostgreSQL,
+Docker, and Jenkins.
+
+This is a design artifact only. The current update prepares folders and
+documentation, but does not add implementation code.
 
 ## Product Result
 
@@ -12,7 +15,7 @@ through its lifecycle.
 
 The current Java prototype models the core ticket behavior. The final design
 expands that behavior into independently deployable services with clear data
-ownership, API boundaries, and event-based communication.
+ownership, REST API boundaries, Kafka events, and Jenkins-based CI/CD.
 
 ## Target Repository Shape
 
@@ -21,25 +24,46 @@ Microservices/
 |-- docs/
 |   |-- architecture.md
 |   |-- api-contracts.md
+|   |-- kafka-events.md
+|   |-- ci-cd.md
 |   |-- deployment.md
 |   `-- operations.md
+|-- gateway/
 |-- services/
 |   |-- ticket-service/
 |   |-- customer-service/
 |   |-- assignment-service/
 |   |-- notification-service/
 |   `-- audit-service/
-|-- gateway/
 |-- infrastructure/
 |   |-- docker/
-|   |-- database/
+|   |-- kafka/
+|   |-- postgres/
+|   |-- jenkins/
 |   `-- observability/
 |-- tests/
 |   |-- contract/
 |   `-- integration/
-|-- PROJECT_STRUCTURE.md
+|-- README.md
 `-- FINAL_PROJECT_DESIGN.md
 ```
+
+## Technology Stack
+
+| Area | Technology |
+| --- | --- |
+| Language | Java 21 |
+| Service framework | Spring Boot |
+| API layer | Spring Web, Spring Cloud Gateway |
+| Data access | Spring Data JPA |
+| Database | PostgreSQL |
+| Messaging | Apache Kafka |
+| Security | Spring Security, JWT |
+| Build tool | Maven |
+| Local runtime | Docker, Docker Compose |
+| CI/CD | Jenkins |
+| Testing | JUnit 5, Mockito, Spring Boot Test, Testcontainers |
+| Observability | Spring Boot Actuator, Micrometer, OpenTelemetry |
 
 ## Service Architecture
 
@@ -52,7 +76,7 @@ flowchart LR
     assignment["Assignment Service"]
     notification["Notification Service"]
     audit["Audit Service"]
-    events["Event Broker"]
+    kafka["Apache Kafka"]
 
     ticketDb[("Ticket DB")]
     customerDb[("Customer DB")]
@@ -69,10 +93,11 @@ flowchart LR
     assignment --> assignmentDb
     audit --> auditDb
 
-    ticket --> events
-    assignment --> events
-    events --> notification
-    events --> audit
+    ticket --> kafka
+    customer --> kafka
+    assignment --> kafka
+    kafka --> notification
+    kafka --> audit
 ```
 
 ## Service Responsibilities
@@ -83,7 +108,7 @@ flowchart LR
 | Ticket Service | Creates tickets, stores ticket state, and manages lifecycle transitions. | Yes |
 | Customer Service | Stores customer profiles and contact preferences. | Yes |
 | Assignment Service | Assigns tickets to teams or agents based on rules and workload. | Yes |
-| Notification Service | Sends status updates through configured channels. | No |
+| Notification Service | Consumes Kafka events and sends status updates through configured channels. | No |
 | Audit Service | Records ticket lifecycle events for traceability and reporting. | Yes |
 
 ## Ticket Lifecycle
@@ -108,7 +133,7 @@ sequenceDiagram
     participant User
     participant Gateway as API Gateway
     participant Ticket as Ticket Service
-    participant Events as Event Broker
+    participant Kafka
     participant Assign as Assignment Service
     participant Notify as Notification Service
     participant Audit as Audit Service
@@ -116,16 +141,16 @@ sequenceDiagram
     User->>Gateway: Create support ticket
     Gateway->>Ticket: POST /tickets
     Ticket-->>Gateway: Ticket created
-    Ticket->>Events: TicketCreated
-    Events->>Assign: TicketCreated
-    Events->>Notify: TicketCreated
-    Events->>Audit: TicketCreated
+    Ticket->>Kafka: Publish TicketCreated
+    Kafka->>Assign: Consume TicketCreated
+    Kafka->>Notify: Consume TicketCreated
+    Kafka->>Audit: Consume TicketCreated
     Gateway-->>User: Ticket id and NEW status
 
-    Assign->>Events: TicketAssigned
-    Events->>Ticket: TicketAssigned
-    Events->>Notify: TicketAssigned
-    Events->>Audit: TicketAssigned
+    Assign->>Kafka: Publish TicketAssigned
+    Kafka->>Ticket: Consume TicketAssigned
+    Kafka->>Notify: Consume TicketAssigned
+    Kafka->>Audit: Consume TicketAssigned
 ```
 
 ## High-Level API Surface
@@ -139,7 +164,7 @@ sequenceDiagram
 | `GET /customers/{id}` | Customer Service | Read customer profile data. |
 | `POST /assignments` | Assignment Service | Assign a ticket to an owner or queue. |
 
-## Event Contracts
+## Kafka Event Contracts
 
 | Event | Producer | Consumers |
 | --- | --- | --- |
@@ -151,6 +176,15 @@ sequenceDiagram
 Events should include a stable event id, timestamp, producer name, aggregate id,
 event type, and schema version.
 
+## Kafka Topics
+
+| Topic | Producers | Consumers |
+| --- | --- | --- |
+| `ticket-events` | Ticket Service | Assignment Service, Notification Service, Audit Service |
+| `assignment-events` | Assignment Service | Ticket Service, Notification Service, Audit Service |
+| `customer-events` | Customer Service | Ticket Service, Notification Service, Audit Service |
+| `audit-events` | Services that need explicit audit records | Audit Service |
+
 ## Data Ownership Rules
 
 - Each service owns its database and exposes access through APIs or events.
@@ -159,23 +193,38 @@ event type, and schema version.
 - User-facing reads can be composed by the API Gateway or a dedicated query view
   when the project needs faster dashboard-style screens.
 
-## Deployment Design
+## Jenkins CI/CD Design
 
 ```mermaid
 flowchart TD
     repo["GitHub main branch"]
-    ci["CI pipeline"]
+    webhook["GitHub webhook"]
+    jenkins["Jenkins pipeline"]
+    test["Build and tests"]
     image["Container images"]
     registry["Container registry"]
     env["Runtime environment"]
     obs["Logs, metrics, traces"]
 
-    repo --> ci
-    ci --> image
+    repo --> webhook
+    webhook --> jenkins
+    jenkins --> test
+    test --> image
     image --> registry
     registry --> env
     env --> obs
 ```
+
+Jenkins pipeline stages:
+
+1. Checkout from GitHub.
+2. Validate project structure.
+3. Build each service.
+4. Run unit tests.
+5. Run integration tests with Testcontainers.
+6. Build Docker images.
+7. Push Docker images to the registry.
+8. Deploy to the selected environment.
 
 Target deployment characteristics:
 
@@ -206,8 +255,8 @@ Target deployment characteristics:
 
 - Users can create, view, update, assign, and close support tickets.
 - Ticket state transitions are validated and auditable.
-- Notifications are produced from ticket and assignment events.
+- Notifications are produced from Kafka ticket and assignment events.
 - Each service has clear ownership of its data and API surface.
-- The system can be built, tested, and deployed from the main branch.
+- The system can be built, tested, and deployed from the main branch through Jenkins.
 - Architecture, API contracts, deployment, and operations are documented before
   production use.
