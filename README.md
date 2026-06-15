@@ -4,7 +4,7 @@ This repository is being shaped into a Java microservices project for managing
 support tickets. The current implementation is still a small Java prototype;
 the committed design describes the intended final architecture.
 
-## Final Project Idea
+## Project Idea
 
 The final system will let users create support tickets, track status changes,
 assign tickets to the right team, send notifications, and keep an audit trail of
