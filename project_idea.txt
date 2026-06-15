@@ -19,6 +19,10 @@ Domain = protects business rules
 Repository/database = stores data, later
 Kafka = sends events to other services, later
 
+
+Run mvn -pl services/ticket-service spring-boot:run
+Open C:\Users\nikit\IdeaProjects\Microservices\frontend\index.html in the browser
+
 NEXT:
 
 PostgreSQL persistence

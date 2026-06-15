@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support Tickets</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="toolbar" aria-label="Ticket service connection">
+        <div>
+          <h1>Support Tickets</h1>
+          <p>Client for the ticket-service API.</p>
+        </div>
+        <label class="api-field">
+          <span>API base URL</span>
+          <input id="apiBaseUrl" type="url" value="http://localhost:8081" />
+        </label>
+      </section>
+
+      <section class="workspace" aria-label="Ticket workspace">
+        <form id="createTicketForm" class="panel" autocomplete="off">
+          <div class="panel-header">
+            <h2>Create Ticket</h2>
+          </div>
+
+          <label>
+            <span>Title</span>
+            <input
+              id="ticketTitle"
+              name="title"
+              type="text"
+              placeholder="Title of the ticket"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Customer ID</span>
+            <input
+              id="customerId"
+              name="customerId"
+              type="text"
+              placeholder="Customer ID"
+              required
+            />
+          </label>
+
+          <button type="submit">Create Ticket</button>
+        </form>
+
+        <section class="panel" aria-labelledby="loadTicketHeading">
+          <div class="panel-header">
+            <h2 id="loadTicketHeading">Load Ticket</h2>
+          </div>
+
+          <form id="loadTicketForm" class="inline-form" autocomplete="off">
+            <label>
+              <span>Ticket ID</span>
+              <input id="ticketId" name="ticketId" type="text" required placeholder="for example: 12345abc-12345abc-12345abc..."/>
+            </label>
+            <button type="submit">Load</button>
+          </form>
+        </section>
+      </section>
+
+      <section class="ticket-surface" aria-live="polite">
+        <article id="ticketDetails" class="ticket-details empty">
+          <div>
+            <h2>No ticket loaded</h2>
+            <p>Create a ticket or load one by ID to manage its status.</p>
+          </div>
+        </article>
+
+        <section class="panel status-panel" aria-labelledby="statusHeading">
+          <div class="panel-header">
+            <h2 id="statusHeading">Status</h2>
+          </div>
+          <div id="statusControls" class="status-controls"></div>
+        </section>
+      </section>
+
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

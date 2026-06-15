@@ -53,6 +53,19 @@ Microservices/
 
 ## Current Status
 
-This repository currently contains the original Java prototype under
-`src/com/example/support` plus the design structure for the future
-microservices application. No service implementation code has been added yet.
+This repository currently contains:
+
+- The original Java prototype under `src/com/example/support`.
+- A Spring Boot `ticket-service` under `services/ticket-service`.
+- A dependency-free browser client under `frontend`.
+
+## Run Locally
+
+Start the ticket service:
+
+```bash
+mvn -pl services/ticket-service spring-boot:run
+```
+
+Then open `frontend/index.html` in a browser. The page calls the ticket API at
+`http://localhost:8081` by default.
