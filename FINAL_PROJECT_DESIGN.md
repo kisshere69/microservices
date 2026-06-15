@@ -28,6 +28,10 @@ Microservices/
 |   |-- ci-cd.md
 |   |-- deployment.md
 |   `-- operations.md
+|-- frontend/
+|   |-- index.html
+|   |-- styles.css
+|   `-- app.js
 |-- gateway/
 |-- services/
 |   |-- ticket-service/

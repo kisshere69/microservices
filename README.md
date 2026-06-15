@@ -25,6 +25,10 @@ The target architecture uses:
 ```text
 Microservices/
 |-- docs/
+|-- frontend/
+|   |-- index.html
+|   |-- styles.css
+|   `-- app.js
 |-- gateway/
 |-- services/
 |   |-- ticket-service/
